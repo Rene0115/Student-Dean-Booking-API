@@ -5,7 +5,7 @@ const SessionSchema = mongoose.Schema({
     type: Date
   },
   studentid: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'Student',
     required: true
   }

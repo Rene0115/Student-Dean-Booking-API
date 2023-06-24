@@ -100,10 +100,17 @@ class StudentController {
         booked: req.body.date,
         studentid: req.student.studentid
       };
+
+      if (!data.booked || !data.studentid) {
+        return res.status(400).send({
+          success: false,
+          error: "Must provide studentid and date"
+        });
+      }
+
       const requestedDate = moment(data.booked);
 
       const now = moment();
-      console.log(now);
 
       if (requestedDate.isBefore(now)) {
         return res.status(400).send({
@@ -111,7 +118,9 @@ class StudentController {
           message: "The session time is in the past."
         });
       }
-      if ( requestedDate.day() !== 4 || requestedDate.hours() !== 10 || requestedDate.day() !==5 ) {
+      console.log(requestedDate.hours());
+      console.log(requestedDate.day());
+      if ((requestedDate.day() !== 4 || 5) & (requestedDate.hours() !== 10)) {
         return res.status(400).send({
           success: false,
           message:
