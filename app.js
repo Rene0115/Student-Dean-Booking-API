@@ -3,6 +3,7 @@ import pino from "pino";
 import database from "./config/db.config.js";
 import dotenv from "dotenv";
 import middleware from "./middleware/middleware.js";
+
 dotenv.config();
 
 const app = express();

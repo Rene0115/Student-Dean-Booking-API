@@ -4,6 +4,10 @@ import { logger } from "../app.js";
 import _ from "lodash";
 import moment from "moment";
 import sessionModel from "../models/booking.model.js";
+import tokenModel from "../models/token.model.js";
+import "moment-timezone";
+
+moment.tz.setDefault("Africa/Lagos");
 
 class StudentController {
   async create(req, res) {
@@ -34,7 +38,7 @@ class StudentController {
       const student = await studentModel.create(data);
       return res.status(200).send({
         success: true,
-        data: student
+        studentid: student._id
       });
     } catch (error) {
       logger.error(error);
@@ -70,14 +74,24 @@ class StudentController {
         message: "email or password is invalid"
       });
     }
+    try {
+      const token = await student.generateToken();
+      const tokenData = { token: token, studentid: data.studentid };
+      const newTokenModel = await tokenModel.create(tokenData);
+      console.log(newTokenModel);
 
-    const token = student.generateToken();
-
-    return res.status(200).send({
-      message: "Login successful",
-      user: student,
-      token: token
-    });
+      return res.status(200).send({
+        message: "Login successful",
+        studentid: student._id,
+        token: token
+      });
+    } catch (err) {
+      logger.error(err);
+      return res.status(400).send({
+        message: "Token generation error",
+        error: err.message
+      });
+    }
   }
 
   async bookSession(req, res) {
@@ -88,15 +102,16 @@ class StudentController {
       };
       const requestedDate = moment(data.booked);
 
-      const currentTime = moment();
+      const now = moment();
+      console.log(now);
 
-      if (requestedDate.isBefore(currentTime)) {
+      if (requestedDate.isBefore(now)) {
         return res.status(400).send({
           success: false,
           message: "The session time is in the past."
         });
       }
-      if (requestedDate.day() !== 4 || requestedDate.hours() !== 10) {
+      if ( requestedDate.day() !== 4 || requestedDate.hours() !== 10 || requestedDate.day() !==5 ) {
         return res.status(400).send({
           success: false,
           message:

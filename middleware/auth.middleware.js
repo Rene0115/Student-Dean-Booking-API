@@ -1,19 +1,24 @@
+import tokenModel from "../models/token.model.js";
 import studentModel from "../models/student.model.js";
+import { logger } from "../app.js";
 
 const auth = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1] || req.query.token;
- console.log(token)
+
     if (!token) {
       return res.status(403).send({
         success: false,
         message: "Missing authentication token"
       });
     }
+    const authTokenModel = await tokenModel.findOne({ token: token });
 
-    const student = await studentModel.findOne({ token: token });
+    const student = await studentModel.findOne({
+      studentid: authTokenModel.studentid
+    });
 
-    if (!student) {
+    if (!student || !authTokenModel) {
       return res.status(401).send({
         success: false,
         message: "Invalid authentication token"
@@ -32,4 +37,4 @@ const auth = async (req, res, next) => {
   }
 };
 
-export default auth
+export default auth;
