@@ -1,5 +1,5 @@
 import tokenModel from "../models/token.model.js";
-import studentModel from "../models/student.model.js";
+import userModel from "../models/user.model.js";
 import { logger } from "../app.js";
 
 const auth = async (req, res, next) => {
@@ -14,18 +14,18 @@ const auth = async (req, res, next) => {
     }
     const authTokenModel = await tokenModel.findOne({ token: token });
 
-    const student = await studentModel.findOne({
-      studentid: authTokenModel.studentid
+    const user = await userModel.findOne({
+      id: authTokenModel.userid
     });
 
-    if (!student || !authTokenModel) {
+    if (!user || !authTokenModel) {
       return res.status(401).send({
         success: false,
         message: "Invalid authentication token"
       });
     }
 
-    req.student = student;
+    req.user = user;
 
     next();
   } catch (error) {

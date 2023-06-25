@@ -6,7 +6,7 @@ const SessionSchema = mongoose.Schema({
   },
   studentid: {
     type: String,
-    ref: 'Student',
+    ref: 'User',
     required: true
   }
 },{versionKey: false, timestamps: true});

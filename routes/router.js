@@ -1,7 +1,8 @@
 import express from "express";
-import studentRouter from "./student.router.js";
+import userRouter from "./user.router.js";
 const router = express.Router();
 
-router.use("/student", studentRouter);
+router.use("/user", userRouter);
+
 
 export default router;

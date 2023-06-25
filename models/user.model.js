@@ -1,10 +1,9 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-
-const studentSchema = mongoose.Schema(
+const userSchema = mongoose.Schema(
   {
-    studentid: {
+    id: {
       type: String,
       required: true,
       validate: {
@@ -17,16 +16,22 @@ const studentSchema = mongoose.Schema(
     password: {
       type: String,
       required: true
+    },
+    role: {
+      type: String,
+      default: "student",
+      required: true,
+      enum: ["student", "dean"]
     }
   },
   { versionKey: false, timestamps: true }
 );
 
-studentSchema.methods.generateToken = () => {
+userSchema.methods.generateToken = () => {
   const token = uuidv4();
   return token;
 };
 
-const studentModel = mongoose.model("Student", studentSchema);
+const userModel = mongoose.model("User", userSchema);
 
-export default studentModel;
+export default userModel;

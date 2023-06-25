@@ -6,9 +6,9 @@ const tokenSchema = mongoose.Schema(
       type: String,
       required: true
     },
-    studentid: {
+    userid: {
       type: String,
-      ref: "Student",
+      ref: "User",
       required: true
     }
   },

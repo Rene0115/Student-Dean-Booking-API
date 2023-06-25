@@ -1,44 +1,42 @@
 import bcrypt from "bcrypt";
-import studentModel from "../models/student.model.js";
+import userModel from "../models/user.model.js";
 import { logger } from "../app.js";
 import _ from "lodash";
 import moment from "moment";
 import sessionModel from "../models/booking.model.js";
 import tokenModel from "../models/token.model.js";
-import "moment-timezone";
-
-moment.tz.setDefault("Africa/Lagos");
-
-class StudentController {
+class UserController {
   async create(req, res) {
     const data = {
-      studentid: req.body.studentid,
-      password: bcrypt.hashSync(req.body.password, 10)
+      id: req.body.id,
+      password: bcrypt.hashSync(req.body.password, 10),
+      role: req?.body.role
     };
-    if (data.studentid.length < 6 || data.studentid.length > 6) {
+    if (data.id.length < 6 || data.id.length > 6) {
       return res.status(400).send({
         success: false,
-        message: "Studentid must be 6 digits"
+        message: "id must be 6 digits"
       });
     }
-    if (_.isEmpty(data.password || data.studentid)) {
+    if (_.isEmpty(data.password || data.id)) {
       return res.status(400).send({
         success: false,
         error: "Must provide studentid and password"
       });
     }
-    const exists = await studentModel.findOne({ studentid: data.studentid });
+    const exists = await userModel.findOne({ id: data.id });
     if (exists) {
       return res.status(200).send({
         success: false,
-        error: "Student already exists"
+        error: "User already exists"
       });
     }
     try {
-      const student = await studentModel.create(data);
+      const user = await userModel.create(data);
       return res.status(200).send({
         success: true,
-        studentid: student._id
+        id: user._id,
+        type: user.role
       });
     } catch (error) {
       logger.error(error);
@@ -50,58 +48,72 @@ class StudentController {
   }
   async login(req, res) {
     const data = {
-      studentid: req.body.studentid,
+      id: req.body.id,
       password: req.body.password
     };
-    if (_.isEmpty(data.password || data.studentid)) {
+    if (_.isEmpty(data.password || data.id)) {
       return res.status(400).send({
         success: false,
-        error: "Must provide studentid and password"
+        error: "Must provide id and password"
       });
     }
 
-    const student = await studentModel.findOne({ studentid: data.studentid });
-    if (!student) {
+    const user = await userModel.findOne({ id: data.id });
+    if (!user) {
       return res.status(200).send({
         success: false,
-        error: "Student does not exists"
+        error: "user does not exist"
       });
     }
-    const verifyPassword = bcrypt.compareSync(data.password, student.password);
+    const verifyPassword = bcrypt.compareSync(data.password, user.password);
     if (!verifyPassword) {
       return res.status(400).send({
         success: false,
-        message: "email or password is invalid"
+        message: "id or password is invalid"
       });
     }
     try {
-      const token = await student.generateToken();
-      const tokenData = { token: token, studentid: data.studentid };
-      const newTokenModel = await tokenModel.create(tokenData);
-      console.log(newTokenModel);
-
+      const token = await user.generateToken();
+      const tokenData = { token: token, userid: data.id };
+      await tokenModel.create(tokenData);
+      if (user.role === "dean") {
+        await sessionModel.deleteMany({ booked: { $lt: moment() } });
+        const sessions = await sessionModel.find();
+        return res.status(200).send({
+          message: "Login successful",
+          deanid: user.id,
+          token: token,
+          sessions: sessions
+        });
+      }
       return res.status(200).send({
         message: "Login successful",
-        studentid: student._id,
+        studentid: user.id,
         token: token
       });
     } catch (err) {
       logger.error(err);
       return res.status(400).send({
-        message: "Token generation error",
+        message: "Login error",
         error: err.message
       });
     }
   }
 
   async bookSession(req, res) {
+    if (req.user.role === "dean") {
+      return res.status(400).send({
+        success: false,
+        message: "Only students can book sessions"
+      });
+    }
     try {
       const data = {
         booked: req.body.date,
-        studentid: req.student.studentid
+        id: req.user.id
       };
 
-      if (!data.booked || !data.studentid) {
+      if (!data.booked || !data.id) {
         return res.status(400).send({
           success: false,
           error: "Must provide studentid and date"
@@ -118,8 +130,7 @@ class StudentController {
           message: "The session time is in the past."
         });
       }
-      console.log(requestedDate.hours());
-      console.log(requestedDate.day());
+
       if ((requestedDate.day() !== 4 || 5) & (requestedDate.hours() !== 10)) {
         return res.status(400).send({
           success: false,
@@ -138,7 +149,7 @@ class StudentController {
         });
       }
       const session = await sessionModel.create({
-        studentid: data.studentid,
+        studentid: data.id,
         booked: requestedDate.toDate()
       });
 
@@ -157,4 +168,4 @@ class StudentController {
   }
 }
 
-export default new StudentController();
+export default new UserController();
