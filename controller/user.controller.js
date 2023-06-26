@@ -60,7 +60,7 @@ class UserController {
 
     const user = await userModel.findOne({ id: data.id });
     if (!user) {
-      return res.status(200).send({
+      return res.status(400).send({
         success: false,
         error: "user does not exist"
       });
@@ -148,9 +148,10 @@ class UserController {
           message: "The session slot is already booked."
         });
       }
+      const newDate = moment(requestedDate).utcOffset('+01:00');
       const session = await sessionModel.create({
         studentid: data.id,
-        booked: requestedDate.toDate()
+        booked: newDate.toDate()
       });
 
       return res.status(200).send({
